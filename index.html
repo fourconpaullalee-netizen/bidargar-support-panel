@@ -180,7 +180,7 @@ async function loadExperts() {
   const list = document.getElementById('expertsList');
   list.innerHTML = data.experts.map(e =>
     '<div class="link-item"><span>'+(e.display_name||e.username)+' — '+e.username+ (e.role==='admin'?' (مدیر)':'') +'</span>' +
-    (e.role==='admin' ? '' : '<button onclick="toggleExpert(''+e.id+'','+(!e.active)+')">'+(e.active?'غیرفعال کردن':'فعال کردن')+'</button>') +
+    (e.role==='admin' ? '' : '<button onclick="toggleExpert(\''+e.id+'\','+(!e.active)+')">'+(e.active?'غیرفعال کردن':'فعال کردن')+'</button>') +
     '</div>'
   ).join('');
 }
@@ -209,7 +209,7 @@ async function createLink() {
   const expertId = role === 'admin' ? document.getElementById('expertSelect').value : undefined;
   try {
     const data = await api('create-link', { mobile, label, expertId });
-    document.getElementById('linkResult').innerHTML = 'لینک ساخته شد: <a href="'+data.link+'" target="_blank">'+data.link+'</a> <button onclick="navigator.clipboard.writeText(''+data.link+'')">کپی</button>';
+    document.getElementById('linkResult').innerHTML = 'لینک ساخته شد: <a href="'+data.link+'" target="_blank">'+data.link+'</a> <button onclick="navigator.clipboard.writeText(\''+data.link+'\')">کپی</button>';
     document.getElementById('newMobile').value=''; document.getElementById('newLabel').value='';
     await loadLinks();
   } catch (e) { document.getElementById('linkResult').textContent = e.message; }
@@ -223,7 +223,7 @@ async function loadLinks() {
     const typeLabels = { text: null, image: '[تصویر]', file: '[فایل]', location: '[موقعیت مکانی]', voice: '[پیام صوتی]' };
     const last = l.lastMessage ? (l.lastMessage.msg_type==='text' ? l.lastMessage.content : (typeLabels[l.lastMessage.msg_type] || '['+l.lastMessage.msg_type+']')) : 'بدون پیام';
     const who = l.support_experts ? (l.support_experts.display_name || l.support_experts.username) : '';
-    return '<div class="link-item" onclick="openChat(''+l.id+'',''+l.mobile+'')">' +
+    return '<div class="link-item" onclick="openChat(\''+l.id+'\',\''+l.mobile+'\')">' +
       '<div><b>'+l.mobile+'</b>' + (l.label? ' — '+l.label : '') + (who && role==='admin' ? ' <span class="small">('+who+')</span>' : '') + '<div class="small">'+ (last||'').toString().slice(0,60) +'</div></div>' +
       (l.unread ? '<span class="badge">'+l.unread+'</span>' : '') +
     '</div>';
