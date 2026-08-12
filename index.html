@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پنل پشتیبانی بیدارگر</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Tahoma, sans-serif; background:#f4f5f7; margin:0; direction: rtl; }
+  header { background:#2563eb; color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
+  header button { background:#1e40af; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  .wrap { max-width:900px; margin:0 auto; padding:14px; }
+  .card { background:#fff; border-radius:10px; padding:16px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+  input, select { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:14px; margin-bottom:8px; }
+  button.primary { background:#2563eb; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
+  .row { display:flex; gap:8px; }
+  .link-item { padding:10px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+  .link-item:hover { background:#f9fafb; }
+  .badge { background:#ef4444; color:#fff; border-radius:10px; padding:1px 8px; font-size:11px; }
+  #err { color:#dc2626; font-size:13px; margin-top:6px; }
+  .hidden { display:none !important; }
+  .msg { margin:8px 0; padding:8px 12px; border-radius:10px; max-width:75%; font-size:14px; }
+  .msg.customer { background:#fff; border:1px solid #ddd; margin-right:auto; }
+  .msg.expert { background:#2563eb; color:#fff; margin-left:auto; }
+  #chatBox { max-height:50vh; overflow-y:auto; padding:6px; background:#f4f5f7; border-radius:8px; }
+  .small { font-size:12px; color:#777; }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+
+<div id="loginView" class="wrap">
+  <div class="card">
+    <h2>ورود به پنل پشتیبانی بیدارگر</h2>
+    <input id="loginUser" placeholder="یوزرنیم">
+    <input id="loginPass" type="password" placeholder="رمز عبور">
+    <button class="primary" onclick="doLogin()">ورود</button>
+    <div id="loginErr" style="color:#dc2626;font-size:13px;margin-top:6px;"></div>
+    <hr style="margin:16px 0;border:none;border-top:1px solid #eee;">
+    <details>
+      <summary style="cursor:pointer;color:#666;font-size:13px;">راه‌اندازی اولیه (فقط برای اولین بار)</summary>
+      <div style="margin-top:10px;">
+        <input id="bsUser" placeholder="یوزرنیم مدیر">
+        <input id="bsPass" type="password" placeholder="رمز عبور مدیر (حداقل ۶ کاراکتر)">
+        <button class="primary" onclick="doBootstrap()">ساخت حساب مدیر</button>
+        <div id="bsErr" style="color:#dc2626;font-size:13px;margin-top:6px;"></div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div id="mainView" class="hidden">
+  <header>
+    <div id="whoami"></div>
+    <button onclick="logout()">خروج</button>
+  </header>
+  <div class="wrap">
+
+    <div class="card">
+      <h3>ساخت لینک جدید برای مشتری</h3>
+      <div class="row">
+        <input id="newMobile" placeholder="شماره موبایل مشتری">
+        <input id="newLabel" placeholder="یادداشت (اختیاری)">
+      </div>
+      <div id="expertSelectWrap" class="hidden">
+        <select id="expertSelect"></select>
+      </div>
+      <button class="primary" onclick="createLink()">ساخت لینک</button>
+      <div id="linkResult" class="small" style="margin-top:8px;"></div>
+    </div>
+
+    <div id="adminCard" class="card hidden">
+      <h3>مدیریت کارشناسان</h3>
+      <div class="row">
+        <input id="expUser" placeholder="یوزرنیم کارشناس">
+        <input id="expPass" type="password" placeholder="رمز عبور">
+      </div>
+      <input id="expName" placeholder="نام نمایشی">
+      <button class="primary" onclick="createExpert()">ساخت کارشناس</button>
+      <div id="expErr" style="color:#dc2626;font-size:13px;margin-top:6px;"></div>
+      <div id="expertsList" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <h3>گفتگو‌ها</h3>
+      <div id="linksList"></div>
+    </div>
+
+    <div id="chatCard" class="card hidden">
+      <h3 id="chatTitle"></h3>
+      <div id="chatBox"></div>
+      <div class="row" style="margin-top:10px;">
+        <input id="replyText" placeholder="پاسخ خود را بنویسید...">
+        <button class="primary" onclick="sendReply()">ارسال</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://dvjkjwqbuoiefoxfclfg.supabase.co/functions/v1/support-panel';
+let token = localStorage.getItem('sp_token') || '';
+let role = '';
+let currentLinkId = null;
+
+async function api(action, payload) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'خطا رخ داد');
+  return data;
+}
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  try {
+    const data = await api('login', { username, password });
+    token = data.token; localStorage.setItem('sp_token', token);
+    await init();
+  } catch (e) { document.getElementById('loginErr').textContent = e.message; }
+}
+
+async function doBootstrap() {
+  const username = document.getElementById('bsUser').value.trim();
+  const password = document.getElementById('bsPass').value;
+  try {
+    await api('bootstrap-admin', { username, password });
+    document.getElementById('bsErr').style.color = '#16a34a';
+    document.getElementById('bsErr').textContent = 'حساب مدیر ساخته شد. حالا وارد شوید.';
+  } catch (e) { document.getElementById('bsErr').style.color = '#dc2626'; document.getElementById('bsErr').textContent = e.message; }
+}
+
+function logout() {
+  api('logout', {}).catch(()=>{});
+  token = ''; localStorage.removeItem('sp_token');
+  hide('mainView'); show('loginView');
+}
+
+async function init() {
+  try {
+    const me = await api('me', {});
+    role = me.role;
+    document.getElementById('whoami').textContent = (role === 'admin' ? 'مدیر' : 'کارشناس') + ' — ' + me.displayName;
+    hide('loginView'); show('mainView');
+    if (role === 'admin') { show('adminCard'); show('expertSelectWrap'); await loadExperts(); }
+    await loadLinks();
+  } catch (e) {
+    hide('mainView'); show('loginView');
+  }
+}
+
+async function loadExperts() {
+  const data = await api('list-experts', {});
+  const sel = document.getElementById('expertSelect');
+  sel.innerHTML = data.experts.filter(e=>e.active).map(e => '<option value="'+e.id+'">'+ (e.display_name||e.username) +' ('+e.username+')</option>').join('');
+  const list = document.getElementById('expertsList');
+  list.innerHTML = data.experts.map(e =>
+    '<div class="link-item"><span>'+(e.display_name||e.username)+' — '+e.username+ (e.role==='admin'?' (مدیر)':'') +'</span>' +
+    (e.role==='admin' ? '' : '<button onclick="toggleExpert(''+e.id+'','+(!e.active)+')">'+(e.active?'غیرفعال کردن':'فعال کردن')+'</button>') +
+    '</div>'
+  ).join('');
+}
+
+async function toggleExpert(id, active) {
+  await api('toggle-expert', { id, active });
+  await loadExperts();
+}
+
+async function createExpert() {
+  const username = document.getElementById('expUser').value.trim();
+  const password = document.getElementById('expPass').value;
+  const displayName = document.getElementById('expName').value.trim();
+  try {
+    await api('create-expert', { username, password, displayName });
+    document.getElementById('expUser').value=''; document.getElementById('expPass').value=''; document.getElementById('expName').value='';
+    document.getElementById('expErr').style.color = '#16a34a';
+    document.getElementById('expErr').textContent = 'کارشناس ساخته شد';
+    await loadExperts();
+  } catch (e) { document.getElementById('expErr').style.color = '#dc2626'; document.getElementById('expErr').textContent = e.message; }
+}
+
+async function createLink() {
+  const mobile = document.getElementById('newMobile').value.trim();
+  const label = document.getElementById('newLabel').value.trim();
+  const expertId = role === 'admin' ? document.getElementById('expertSelect').value : undefined;
+  try {
+    const data = await api('create-link', { mobile, label, expertId });
+    document.getElementById('linkResult').innerHTML = 'لینک ساخته شد: <a href="'+data.link+'" target="_blank">'+data.link+'</a> <button onclick="navigator.clipboard.writeText(''+data.link+'')">کپی</button>';
+    document.getElementById('newMobile').value=''; document.getElementById('newLabel').value='';
+    await loadLinks();
+  } catch (e) { document.getElementById('linkResult').textContent = e.message; }
+}
+
+async function loadLinks() {
+  const data = await api('list-links', {});
+  const el = document.getElementById('linksList');
+  if (!data.links.length) { el.innerHTML = '<div class="small">هنوز گفتگویی ثبت نشده است.</div>'; return; }
+  el.innerHTML = data.links.map(l => {
+    const typeLabels = { text: null, image: '[تصویر]', file: '[فایل]', location: '[موقعیت مکانی]', voice: '[پیام صوتی]' };
+    const last = l.lastMessage ? (l.lastMessage.msg_type==='text' ? l.lastMessage.content : (typeLabels[l.lastMessage.msg_type] || '['+l.lastMessage.msg_type+']')) : 'بدون پیام';
+    const who = l.support_experts ? (l.support_experts.display_name || l.support_experts.username) : '';
+    return '<div class="link-item" onclick="openChat(''+l.id+'',''+l.mobile+'')">' +
+      '<div><b>'+l.mobile+'</b>' + (l.label? ' — '+l.label : '') + (who && role==='admin' ? ' <span class="small">('+who+')</span>' : '') + '<div class="small">'+ (last||'').toString().slice(0,60) +'</div></div>' +
+      (l.unread ? '<span class="badge">'+l.unread+'</span>' : '') +
+    '</div>';
+  }).join('');
+}
+
+async function openChat(linkId, mobile) {
+  currentLinkId = linkId;
+  const data = await api('conversation', { linkId });
+  show('chatCard');
+  document.getElementById('chatTitle').textContent = 'گفتگو با ' + mobile;
+  renderChat(data.messages);
+  await loadLinks();
+}
+
+function renderChat(messages) {
+  const box = document.getElementById('chatBox');
+  box.innerHTML = messages.map(m => {
+    let body = '';
+    if (m.msg_type === 'text') body = escapeHtml(m.content || '');
+    else if (m.msg_type === 'location') body = '📍 <a href="https://maps.google.com/?q='+m.lat+','+m.lng+'" target="_blank">موقعیت مکانی</a>';
+    else if (m.msg_type === 'image') body = '🖼️ <a href="'+m.github_asset_url+'" target="_blank">'+escapeHtml(m.file_name||'تصویر')+'</a><br><img src="'+m.github_asset_url+'" style="max-width:100%;border-radius:8px;margin-top:6px;">';
+    else if (m.msg_type === 'voice') body = '🎤 پیام صوتی<br><audio controls src="'+m.github_asset_url+'" style="max-width:100%;margin-top:6px;"></audio>';
+    else body = '📎 <a href="'+m.github_asset_url+'" target="_blank">'+escapeHtml(m.file_name||'فایل')+'</a>';
+    return '<div class="msg '+m.sender+'">'+body+'</div>';
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendReply() {
+  const el = document.getElementById('replyText');
+  const content = el.value.trim();
+  if (!content || !currentLinkId) return;
+  el.value = '';
+  await api('reply', { linkId: currentLinkId, content });
+  const data = await api('conversation', { linkId: currentLinkId });
+  renderChat(data.messages);
+}
+
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+document.getElementById('replyText') && document.getElementById('replyText').addEventListener?.('keydown', e => { if (e.key==='Enter') sendReply(); });
+
+if (token) init(); else { show('loginView'); }
+</script>
+</body>
+</html>
