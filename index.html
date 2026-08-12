@@ -6,25 +6,66 @@
 <title>پنل پشتیبانی بیدارگر</title>
 <style>
   * { box-sizing: border-box; }
-  body { font-family: Tahoma, sans-serif; background:#f4f5f7; margin:0; direction: rtl; }
-  header { background:#2563eb; color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
-  header button { background:#1e40af; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; }
-  .wrap { max-width:900px; margin:0 auto; padding:14px; }
-  .card { background:#fff; border-radius:10px; padding:16px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
-  input, select { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:14px; margin-bottom:8px; }
-  button.primary { background:#2563eb; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
+  :root { --blue:#2563eb; --blue-dark:#1e40af; --bg:#f4f5f7; --border:#e5e7eb; --danger:#dc2626; --green:#16a34a; }
+  body { font-family: Tahoma, sans-serif; background:var(--bg); margin:0; direction: rtl; color:#1f2937; }
+  header { background:var(--blue); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:20; }
+  header .who { font-size:14px; }
+  header button { background:var(--blue-dark); color:#fff; border:none; padding:7px 14px; border-radius:8px; cursor:pointer; font-size:13px; }
+  .wrap { max-width:960px; margin:0 auto; padding:14px; }
+  .card { background:#fff; border-radius:12px; padding:16px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); border:1px solid var(--border); }
+  .card h3 { margin:0 0 12px; font-size:15px; color:#111827; }
+  input, select { width:100%; padding:10px 12px; border-radius:8px; border:1px solid #d1d5db; font-size:14px; margin-bottom:8px; font-family: inherit; }
+  input:focus, select:focus { outline:none; border-color:var(--blue); }
+  button.primary { background:var(--blue); color:#fff; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; font-size:14px; font-family:inherit; }
+  button.primary:hover { background:var(--blue-dark); }
   .row { display:flex; gap:8px; }
-  .link-item { padding:10px; border-bottom:1px solid #eee; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+  .row input { margin-bottom:0; }
+  .link-item { padding:12px 10px; border-bottom:1px solid #f1f2f4; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px; transition:background .1s; }
   .link-item:hover { background:#f9fafb; }
-  .badge { background:#ef4444; color:#fff; border-radius:10px; padding:1px 8px; font-size:11px; }
-  #err { color:#dc2626; font-size:13px; margin-top:6px; }
+  .link-item:last-child { border-bottom:none; }
+  .link-main { flex:1; min-width:0; }
+  .link-main b { font-size:14.5px; }
+  .link-preview { font-size:12.5px; color:#8a8f98; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .link-side { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .badge { background:var(--danger); color:#fff; border-radius:10px; padding:1px 8px; font-size:11px; min-width:18px; text-align:center; }
+  .status-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .status-dot.active { background:var(--green); }
+  .status-dot.inactive { background:#c1c5cb; }
+  .toggle-btn { border:1px solid #d1d5db; background:#fff; color:#4b5563; border-radius:7px; padding:4px 10px; font-size:11.5px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .toggle-btn.is-active { border-color:#fecaca; color:var(--danger); }
+  .toggle-btn.is-inactive { border-color:#bbf7d0; color:var(--green); }
+  #err { color:var(--danger); font-size:13px; margin-top:6px; }
   .hidden { display:none !important; }
-  .msg { margin:8px 0; padding:8px 12px; border-radius:10px; max-width:75%; font-size:14px; }
-  .msg.customer { background:#fff; border:1px solid #ddd; margin-right:auto; }
-  .msg.expert { background:#2563eb; color:#fff; margin-left:auto; }
-  #chatBox { max-height:50vh; overflow-y:auto; padding:6px; background:#f4f5f7; border-radius:8px; }
-  .small { font-size:12px; color:#777; }
+  .small { font-size:12px; color:#8a8f98; }
   a { color: inherit; }
+
+  /* --- صفحه‌ی گفتگو، تمام‌صفحه مثل پیام‌رسان‌های معمولی --- */
+  #chatView { position:fixed; inset:0; background:#e9edf3; z-index:50; display:flex; flex-direction:column; }
+  #chatView.hidden { display:none !important; }
+  #chatHeader { background:var(--blue); color:#fff; padding:12px 14px; display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  #chatHeader .back-btn { background:rgba(255,255,255,0.15); border:none; color:#fff; width:34px; height:34px; border-radius:50%; font-size:18px; cursor:pointer; flex-shrink:0; }
+  #chatHeader .info { flex:1; min-width:0; }
+  #chatHeader .info .name { font-size:15px; font-weight:bold; }
+  #chatHeader .info .sub { font-size:11.5px; opacity:0.85; }
+  #chatHeader .head-toggle { background:rgba(255,255,255,0.15); border:none; color:#fff; padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  #chatBox { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:2px; }
+  .msg-row { display:flex; margin:5px 0; }
+  .msg-row.customer { justify-content:flex-start; }
+  .msg-row.expert { justify-content:flex-end; }
+  .msg { padding:9px 13px; border-radius:14px; max-width:78%; font-size:14.5px; line-height:1.55; box-shadow:0 1px 1px rgba(0,0,0,0.04); }
+  .msg.customer { background:#fff; border:1px solid #e5e7eb; border-bottom-left-radius:4px; }
+  .msg.expert { background:var(--blue); color:#fff; border-bottom-right-radius:4px; }
+  .msg img { max-width:100%; border-radius:8px; margin-top:6px; display:block; }
+  .msg audio { max-width:230px; margin-top:4px; }
+  .msg .file-link { display:flex; align-items:center; gap:6px; text-decoration:none; font-weight:bold; }
+  .msg .time { font-size:10.5px; opacity:0.65; margin-top:4px; text-align:left; }
+  #chatEmpty { text-align:center; color:#9aa0a8; margin-top:60px; font-size:13.5px; }
+  #chatBar { flex-shrink:0; background:#fff; border-top:1px solid var(--border); padding:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  #chatBar input#replyText { flex:1; min-width:120px; margin-bottom:0; }
+  #chatBar button.icon-btn { background:#f1f2f4; border:none; width:38px; height:38px; border-radius:50%; font-size:16px; cursor:pointer; flex-shrink:0; }
+  #chatBar button.icon-btn.rec.recording { background:#fecaca; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%{opacity:1} 50%{opacity:0.55} 100%{opacity:1} }
+  #chatStatus { text-align:center; font-size:12px; color:#8a8f98; padding:0 10px 6px; }
 </style>
 </head>
 <body>
@@ -52,7 +93,7 @@
 
 <div id="mainView" class="hidden">
   <header>
-    <div id="whoami"></div>
+    <div class="who" id="whoami"></div>
     <button onclick="logout()">خروج</button>
   </header>
   <div class="wrap">
@@ -87,45 +128,46 @@
       <div id="linksList"></div>
     </div>
 
-    <div id="chatCard" class="card hidden">
-      <h3 id="chatTitle"></h3>
-      <div id="chatBox"></div>
-      <div class="row" style="margin-top:10px;">
-        <input id="replyText" placeholder="پاسخ خود را بنویسید...">
-        <button class="primary" onclick="sendReply()">ارسال</button>
-      </div>
-    </div>
+  </div>
+</div>
 
+<!-- صفحه‌ی تمام‌صفحه‌ی گفتگو، دقیقاً مثل یک پیام‌رسان معمولی -->
+<div id="chatView" class="hidden">
+  <div id="chatHeader">
+    <button class="back-btn" onclick="closeChat()">›</button>
+    <div class="info">
+      <div class="name" id="chatTitle"></div>
+      <div class="sub" id="chatSub"></div>
+    </div>
+    <button class="head-toggle" id="chatToggleBtn" onclick="toggleCurrentLink()"></button>
+  </div>
+  <div id="chatBox"></div>
+  <div id="chatStatus"></div>
+  <div id="chatBar">
+    <button class="icon-btn" title="فایل/عکس" onclick="document.getElementById('fileInput').click()">📎</button>
+    <button class="icon-btn" title="موقعیت مکانی" onclick="sendLocation()">📍</button>
+    <button class="icon-btn rec" id="recBtn" title="پیام صوتی" onclick="toggleRecording()">🎤</button>
+    <input id="replyText" placeholder="پاسخ خود را بنویسید...">
+    <button class="primary" onclick="sendReply()">ارسال</button>
+    <input type="file" id="fileInput" style="display:none" onchange="sendFile(event)">
   </div>
 </div>
 
 <script>
-const API_URL = 'https://dvjkjwqbuoiefoxfclfg.supabase.co/functions/v1/support-panel';
+const API_URL = "https://dvjkjwqbuoiefoxfclfg.supabase.co/functions/v1/support-panel";
 let token = localStorage.getItem('sp_token') || '';
 let role = '';
 let currentLinkId = null;
-
-function showFatal(msg) {
-  try {
-    var d = document.createElement('div');
-    d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#7c2d12;color:#fff;padding:10px;font-size:12px;z-index:999999;direction:ltr;text-align:left;white-space:pre-wrap;';
-    d.textContent = 'FETCH FAILED: ' + msg;
-    document.body.appendChild(d);
-  } catch (e) {}
-}
+let currentLinkActive = true;
+let currentLinkMobile = '';
+const ATTACH_BASE = "https://dvjkjwqbuoiefoxfclfg.supabase.co/functions/v1/support-attachment";
 
 async function api(action, payload) {
-  let res;
-  try {
-    res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
-      body: JSON.stringify({ action, ...payload }),
-    });
-  } catch (networkErr) {
-    showFatal((networkErr && networkErr.message) ? networkErr.message : String(networkErr));
-    throw networkErr;
-  }
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+    body: JSON.stringify({ action, ...payload }),
+  });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'خطا رخ داد');
   return data;
@@ -133,6 +175,7 @@ async function api(action, payload) {
 
 function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function setStatus(t) { const el = document.getElementById('chatStatus'); el.textContent = t; setTimeout(()=>{ if(el.textContent===t) el.textContent=''; }, 4000); }
 
 async function doLogin() {
   const username = document.getElementById('loginUser').value.trim();
@@ -157,7 +200,7 @@ async function doBootstrap() {
 function logout() {
   api('logout', {}).catch(()=>{});
   token = ''; localStorage.removeItem('sp_token');
-  hide('mainView'); show('loginView');
+  hide('mainView'); closeChat(); show('loginView');
 }
 
 async function init() {
@@ -180,7 +223,7 @@ async function loadExperts() {
   const list = document.getElementById('expertsList');
   list.innerHTML = data.experts.map(e =>
     '<div class="link-item"><span>'+(e.display_name||e.username)+' — '+e.username+ (e.role==='admin'?' (مدیر)':'') +'</span>' +
-    (e.role==='admin' ? '' : '<button onclick="toggleExpert(\''+e.id+'\','+(!e.active)+')">'+(e.active?'غیرفعال کردن':'فعال کردن')+'</button>') +
+    (e.role==='admin' ? '' : '<button class="toggle-btn '+(e.active?'is-active':'is-inactive')+'" onclick="toggleExpert(\''+e.id+'\','+(!e.active)+')">'+(e.active?'غیرفعال کردن':'فعال کردن')+'</button>') +
     '</div>'
   ).join('');
 }
@@ -215,40 +258,80 @@ async function createLink() {
   } catch (e) { document.getElementById('linkResult').textContent = e.message; }
 }
 
+let linksCache = [];
 async function loadLinks() {
   const data = await api('list-links', {});
+  linksCache = data.links;
   const el = document.getElementById('linksList');
   if (!data.links.length) { el.innerHTML = '<div class="small">هنوز گفتگویی ثبت نشده است.</div>'; return; }
   el.innerHTML = data.links.map(l => {
     const typeLabels = { text: null, image: '[تصویر]', file: '[فایل]', location: '[موقعیت مکانی]', voice: '[پیام صوتی]' };
     const last = l.lastMessage ? (l.lastMessage.msg_type==='text' ? l.lastMessage.content : (typeLabels[l.lastMessage.msg_type] || '['+l.lastMessage.msg_type+']')) : 'بدون پیام';
     const who = l.support_experts ? (l.support_experts.display_name || l.support_experts.username) : '';
-    return '<div class="link-item" onclick="openChat(\''+l.id+'\',\''+l.mobile+'\')">' +
-      '<div><b>'+l.mobile+'</b>' + (l.label? ' — '+l.label : '') + (who && role==='admin' ? ' <span class="small">('+who+')</span>' : '') + '<div class="small">'+ (last||'').toString().slice(0,60) +'</div></div>' +
-      (l.unread ? '<span class="badge">'+l.unread+'</span>' : '') +
+    return '<div class="link-item" onclick="openChat(\''+l.id+'\')">' +
+      '<span class="status-dot '+(l.active?'active':'inactive')+'" title="'+(l.active?'فعال':'غیرفعال')+'"></span>' +
+      '<div class="link-main"><b>'+l.mobile+'</b>' + (l.label? ' — '+escapeHtml(l.label) : '') + (who && role==='admin' ? ' <span class="small">('+escapeHtml(who)+')</span>' : '') + '<div class="link-preview">'+ escapeHtml((last||'').toString()).slice(0,60) +'</div></div>' +
+      '<div class="link-side">' +
+        (l.unread ? '<span class="badge">'+l.unread+'</span>' : '') +
+        '<button class="toggle-btn '+(l.active?'is-active':'is-inactive')+'" onclick="event.stopPropagation(); toggleLink(\''+l.id+'\','+(!l.active)+')">'+(l.active?'غیرفعال کردن':'فعال کردن')+'</button>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
 
-async function openChat(linkId, mobile) {
+async function toggleLink(id, active) {
+  try { await api('toggle-link', { id, active }); await loadLinks(); if (currentLinkId===id) { currentLinkActive = active; updateChatToggleBtn(); } }
+  catch (e) { alert(e.message); }
+}
+
+function updateChatToggleBtn() {
+  const btn = document.getElementById('chatToggleBtn');
+  btn.textContent = currentLinkActive ? 'غیرفعال کردن لینک' : 'فعال کردن لینک';
+}
+async function toggleCurrentLink() {
+  if (!currentLinkId) return;
+  await toggleLink(currentLinkId, !currentLinkActive);
+}
+
+async function openChat(linkId) {
   currentLinkId = linkId;
+  const l = linksCache.find(x => x.id === linkId);
+  currentLinkActive = l ? !!l.active : true;
+  currentLinkMobile = l ? l.mobile : '';
+  document.getElementById('chatTitle').textContent = currentLinkMobile;
+  document.getElementById('chatSub').textContent = l && l.label ? l.label : '';
+  updateChatToggleBtn();
+  show('chatView');
+  document.getElementById('chatBox').innerHTML = '<div id="chatEmpty">در حال بارگذاری...</div>';
   const data = await api('conversation', { linkId });
-  show('chatCard');
-  document.getElementById('chatTitle').textContent = 'گفتگو با ' + mobile;
   renderChat(data.messages);
   await loadLinks();
 }
 
+function closeChat() {
+  hide('chatView');
+  currentLinkId = null;
+}
+
+function attachUrl(msg) {
+  return ATTACH_BASE + '?msgId=' + encodeURIComponent(msg.id) + '&auth=' + encodeURIComponent(token);
+}
+
+function fmtTime(iso) {
+  try { const d = new Date(iso); return d.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }); } catch { return ''; }
+}
+
 function renderChat(messages) {
   const box = document.getElementById('chatBox');
+  if (!messages.length) { box.innerHTML = '<div id="chatEmpty">هنوز پیامی رد و بدل نشده است.</div>'; return; }
   box.innerHTML = messages.map(m => {
     let body = '';
     if (m.msg_type === 'text') body = escapeHtml(m.content || '');
-    else if (m.msg_type === 'location') body = '📍 <a href="https://maps.google.com/?q='+m.lat+','+m.lng+'" target="_blank">موقعیت مکانی</a>';
-    else if (m.msg_type === 'image') body = '🖼️ <a href="'+m.github_asset_url+'" target="_blank">'+escapeHtml(m.file_name||'تصویر')+'</a><br><img src="'+m.github_asset_url+'" style="max-width:100%;border-radius:8px;margin-top:6px;">';
-    else if (m.msg_type === 'voice') body = '🎤 پیام صوتی<br><audio controls src="'+m.github_asset_url+'" style="max-width:100%;margin-top:6px;"></audio>';
-    else body = '📎 <a href="'+m.github_asset_url+'" target="_blank">'+escapeHtml(m.file_name||'فایل')+'</a>';
-    return '<div class="msg '+m.sender+'">'+body+'</div>';
+    else if (m.msg_type === 'location') body = '📍 <a href="https://maps.google.com/?q='+m.lat+','+m.lng+'" target="_blank">نمایش موقعیت مکانی</a>';
+    else if (m.msg_type === 'image') body = '<img src="'+attachUrl(m)+'" loading="lazy">';
+    else if (m.msg_type === 'voice') body = '🎤<br><audio controls preload="none" src="'+attachUrl(m)+'"></audio>';
+    else body = '<a class="file-link" href="'+attachUrl(m)+'" target="_blank">📎 '+escapeHtml(m.file_name||'فایل')+'</a>';
+    return '<div class="msg-row '+m.sender+'"><div class="msg '+m.sender+'">'+body+'<div class="time">'+fmtTime(m.created_at)+'</div></div></div>';
   }).join('');
   box.scrollTop = box.scrollHeight;
 }
@@ -258,9 +341,92 @@ async function sendReply() {
   const content = el.value.trim();
   if (!content || !currentLinkId) return;
   el.value = '';
-  await api('reply', { linkId: currentLinkId, content });
-  const data = await api('conversation', { linkId: currentLinkId });
-  renderChat(data.messages);
+  try {
+    await api('reply', { linkId: currentLinkId, type: 'text', content });
+    const data = await api('conversation', { linkId: currentLinkId });
+    renderChat(data.messages);
+    await loadLinks();
+  } catch (e) { setStatus(e.message); }
+}
+
+function sendLocation() {
+  if (!currentLinkId) return;
+  if (!navigator.geolocation) { setStatus('مرورگر شما موقعیت مکانی را پشتیبانی نمی‌کند'); return; }
+  setStatus('در حال دریافت موقعیت...');
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    try {
+      await api('reply', { linkId: currentLinkId, type: 'location', lat: pos.coords.latitude, lng: pos.coords.longitude });
+      const data = await api('conversation', { linkId: currentLinkId });
+      renderChat(data.messages);
+      await loadLinks();
+    } catch (e) { setStatus(e.message); }
+  }, () => setStatus('دسترسی به موقعیت مکانی رد شد'));
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function sendFile(ev) {
+  const file = ev.target.files[0];
+  ev.target.value = '';
+  if (!file || !currentLinkId) return;
+  if (file.size > 20 * 1024 * 1024) { setStatus('حجم فایل نباید بیشتر از ۲۰ مگابایت باشد'); return; }
+  setStatus('در حال ارسال فایل...');
+  try {
+    const b64 = await fileToBase64(file);
+    const isImage = file.type.startsWith('image/');
+    await api('reply', { linkId: currentLinkId, type: isImage ? 'image' : 'file', fileBase64: b64, fileName: file.name, mimeType: file.type });
+    const data = await api('conversation', { linkId: currentLinkId });
+    renderChat(data.messages);
+    await loadLinks();
+  } catch (e) { setStatus(e.message || 'ارسال فایل ناموفق بود'); }
+}
+
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+
+async function toggleRecording() {
+  const btn = document.getElementById('recBtn');
+  if (!currentLinkId) return;
+  if (!isRecording) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setStatus('مرورگر شما ضبط صدا را پشتیبانی نمی‌کند'); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordedChunks = [];
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+      mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        if (blob.size < 500) { setStatus('ضبط بسیار کوتاه بود'); return; }
+        setStatus('در حال ارسال پیام صوتی...');
+        try {
+          const b64 = await fileToBase64(blob);
+          const ext = (mediaRecorder.mimeType || 'audio/webm').includes('mp4') ? 'm4a' : 'webm';
+          await api('reply', { linkId: currentLinkId, type: 'voice', fileBase64: b64, fileName: 'voice-' + Date.now() + '.' + ext, mimeType: mediaRecorder.mimeType || 'audio/webm' });
+          const data = await api('conversation', { linkId: currentLinkId });
+          renderChat(data.messages);
+          await loadLinks();
+        } catch (e) { setStatus(e.message || 'ارسال پیام صوتی ناموفق بود'); }
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      btn.classList.add('recording');
+      setStatus('در حال ضبط... دوباره بزنید تا ارسال شود');
+    } catch (e) { setStatus('دسترسی به میکروفون رد شد'); }
+  } else {
+    isRecording = false;
+    btn.classList.remove('recording');
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  }
 }
 
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
